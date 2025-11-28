@@ -1,6 +1,9 @@
+
 # TRMNL Weather Station
 
 A beautiful weather display for the TRMNL OG e-paper device, inspired by [lmarzen's esp32-weather-epd](https://github.com/lmarzen/esp32-weather-epd).
+
+![tempImage68yIWG](https://github.com/user-attachments/assets/0afc5bf9-47b7-479b-862d-28f155bb8d39)
 
 ## Features
 
