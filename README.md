@@ -14,7 +14,7 @@ A beautiful weather display for the TRMNL OG e-paper device, inspired by [lmarze
 - **Button Support**: Wake-up on button press, long-press to reset WiFi
 - **Deep Sleep**: Efficient power management with configurable refresh intervals
 - **WiFi Captive Portal**: Easy setup without hardcoding credentials
-- ****Image display from Nextcloud**: Can refresh when desired
+- **Image display from Nextcloud**: Can refresh when desired
 
 ## Hardware
 
