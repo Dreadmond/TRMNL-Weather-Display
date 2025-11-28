@@ -153,7 +153,7 @@ pio device monitor
 
 This project combines elements from:
 - TRMNL firmware (MIT License)
-- LMARZEN's esp32-weather-epd (GPL-3.0)
+- lmarzen's esp32-weather-epd (GPL-3.0)
 
 Please respect the licenses of the original projects.
 
