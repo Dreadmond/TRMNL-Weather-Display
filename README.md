@@ -11,6 +11,7 @@ A beautiful weather display for the TRMNL OG e-paper device, inspired by [lmarze
 - **Button Support**: Wake-up on button press, long-press to reset WiFi
 - **Deep Sleep**: Efficient power management with configurable refresh intervals
 - **WiFi Captive Portal**: Easy setup without hardcoding credentials
+- ****Image display from Nextcloud**: Can refresh when desired
 
 ## Hardware
 
@@ -25,8 +26,8 @@ All settings are in `include/config.h`:
 - **OpenWeatherMap API**: Your API key
 - **Home Assistant**: 
   - Host: homeassistant.local
-  - Temperature: sensor.xxxx_thermostat_temperature
-  - Humidity: sensor.xxxx_thermostat_humidity
+  - Temperature: sensor.xxx_temperature
+  - Humidity: sensor.xxxx_humidity
 - **MQTT**: Port 1883, user xxxxx, pass xxxxx
 - **Units**: Celsius, mph, 24-hour time
 - **Timezone**: UK (GMT/BST)
@@ -80,33 +81,6 @@ The device automatically registers itself with Home Assistant via MQTT discovery
 1. Go to Settings → Devices & Services → MQTT
 2. Look for "TRMNL Weather Station"
 3. All sensors will be automatically available
-
-## Display Layout
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│ Stretford          Sat, 28 Nov 2025  14:30      🔋 85%  📶  │
-├─────────────────────────────────────────────────────────────┤
-│                                    ┌──────────────────────┐ │
-│  12°C                              │  INDOOR              │ │
-│  Partly Cloudy                     │  21.5°C    45%       │ │
-│  Feels like: 10°C                  └──────────────────────┘ │
-│  High: 14°C  Low: 8°C              Sunrise: 07:42          │
-│                                    Sunset:  16:12          │
-│  Humidity: 78%                                              │
-│  Wind: 12 mph SW                                            │
-│  Pressure: 1013 mb                                          │
-│  UV Index: 2.0                                              │
-├─────────────────────────────────────────────────────────────┤
-│ Next 12 Hours:                                               │
-│ 15:00  16:00  17:00  18:00  19:00  20:00  ...              │
-│  12°    11°    10°    9°     8°     7°                     │
-├─────────────────────────────────────────────────────────────┤
-│ 5-Day Forecast:                                             │
-│ Sun    Mon    Tue    Wed    Thu                             │
-│ 14/8°  12/6°  13/7°  11/5°  10/4°                          │
-└─────────────────────────────────────────────────────────────┘
-```
 
 ## Sleep Schedule
 
