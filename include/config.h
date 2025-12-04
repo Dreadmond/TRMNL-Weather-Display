@@ -104,6 +104,7 @@
 // =============================================================================
 // PIN DEFINITIONS - Set in config.cpp for TRMNL OG hardware
 // =============================================================================
+#define PIN_BUTTON 2  // BOOT button on ESP32-C3
 extern const uint8_t PIN_BAT_ADC;
 extern const uint8_t PIN_EPD_BUSY;
 extern const uint8_t PIN_EPD_CS;
