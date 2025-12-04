@@ -28,6 +28,8 @@
 #include "client_utils.h"
 #include "display_utils.h"
 #include "renderer.h"
+#include "watchdog.h"
+#include "ota_update.h"
 #include "icons/icons_196x196.h"
 #include FONT_HEADER  // For fonts in image display mode
 #include <PNGdec.h>   // For PNG decoding
@@ -57,8 +59,7 @@ PubSubClient mqttClient(mqttWifiClient);
 // WiFiManager
 WiFiManager wifiManager;
 
-// Button for TRMNL OG
-#define PIN_BUTTON 2  // BOOT button on ESP32-C3
+// PIN_BUTTON is now defined in config.h
 
 // RTC memory survives deep sleep - store display mode
 RTC_DATA_ATTR DisplayMode currentDisplayMode = MODE_WEATHER;
@@ -425,7 +426,7 @@ void publishBatteryMQTT(uint32_t batteryVoltage)
       device["name"] = "TRMNL Weather Station";
       device["model"] = "TRMNL OG";
       device["manufacturer"] = "TRMNL";
-      device["sw_version"] = "1.0.0";
+      device["sw_version"] = getFirmwareVersion();
       
       String configPayload;
       serializeJson(configDoc, configPayload);
@@ -632,7 +633,18 @@ void setup()
   Serial.println("\n========================================");
   Serial.println("   TRMNL OG Weather Station");
   Serial.println("   Based on esp32-weather-epd");
+  Serial.print("   Firmware Version: ");
+  Serial.println(getFirmwareVersion());
   Serial.println("========================================\n");
+  
+  // Initialize watchdog timer (30 second timeout)
+  initWatchdog(30);
+  feedWatchdog();
+  
+  // Check if we were reset by watchdog
+  if (wasWatchdogReset()) {
+    Serial.println("WARNING: Device was reset by watchdog - possible freeze detected!");
+  }
 
   // Check wake reason and handle button press
   esp_sleep_wakeup_cause_t wakeup_reason = esp_sleep_get_wakeup_cause();
@@ -767,6 +779,7 @@ void setup()
 
   // START WIFI using WiFiManager
   int wifiRSSI = 0;
+  watchdogCheckAndSleep(startTime, 30);
   wl_status_t wifiStatus = startWiFiManager(wifiRSSI);
   if (wifiStatus != WL_CONNECTED)
   {
@@ -781,9 +794,27 @@ void setup()
     beginDeepSleep(startTime, &timeInfo);
   }
 
+  feedWatchdog();
+  
+  // Check for OTA updates (only if WiFi connected and enough battery)
+#if BATTERY_MONITORING
+  if (batteryVoltage > LOW_BATTERY_VOLTAGE)
+#endif
+  {
+    Serial.println("Checking for firmware updates...");
+    watchdogCheckAndSleep(startTime, 30);
+    if (checkAndPerformOTAUpdate()) {
+      // Update was performed, device will restart
+      return;
+    }
+    feedWatchdog();
+  }
+
   // TIME SYNCHRONIZATION
+  watchdogCheckAndSleep(startTime, 30);
   configTzTime(TIMEZONE, NTP_SERVER_1, NTP_SERVER_2);
   bool timeConfigured = waitForSNTPSync(&timeInfo);
+  feedWatchdog();
   if (!timeConfigured)
   {
     Serial.println(TXT_TIME_SYNCHRONIZATION_FAILED);
@@ -842,7 +873,10 @@ void setup()
   client.setCACert(cert_Sectigo_RSA_Organization_Validation_Secure_Server_CA);
 #endif
 
+  feedWatchdog();
+  watchdogCheckAndSleep(startTime, 30);
   int rxStatus = getOWMonecall(client, owm_onecall);
+  feedWatchdog();
   if (rxStatus != HTTP_CODE_OK)
   {
     killWiFi();
@@ -857,7 +891,9 @@ void setup()
     beginDeepSleep(startTime, &timeInfo);
   }
 
+  watchdogCheckAndSleep(startTime, 30);
   rxStatus = getOWMairpollution(client, owm_air_pollution);
+  feedWatchdog();
   if (rxStatus != HTTP_CODE_OK)
   {
     killWiFi();
@@ -877,9 +913,11 @@ void setup()
   float inHumidity = NAN;
 
 #ifdef USE_HOME_ASSISTANT_INDOOR
+  watchdogCheckAndSleep(startTime, 30);
   Serial.println("Reading indoor sensors from Home Assistant...");
   inTemp = getHomeAssistantSensorState(HA_TEMP_ENTITY);
   inHumidity = getHomeAssistantSensorState(HA_HUMIDITY_ENTITY);
+  feedWatchdog();
   
   if (!std::isnan(inTemp) && !std::isnan(inHumidity))
   {
@@ -894,7 +932,9 @@ void setup()
 
   // PUBLISH BATTERY TELEMETRY TO HOME ASSISTANT
 #if BATTERY_MONITORING
+  watchdogCheckAndSleep(startTime, 30);
   publishBatteryMQTT(batteryVoltage);
+  feedWatchdog();
 #endif
 
   killWiFi(); // WiFi no longer needed
@@ -905,22 +945,31 @@ void setup()
   getDateStr(dateStr, &timeInfo);
 
   // RENDER WEATHER DISPLAY
+  watchdogCheckAndSleep(startTime, 30);
   initDisplay();
+  feedWatchdog();
   do
   {
+    watchdogCheckAndSleep(startTime, 30);
     drawCurrentConditions(owm_onecall.current, owm_onecall.daily[0],
                           owm_air_pollution, inTemp, inHumidity);
+    feedWatchdog();
     drawOutlookGraph(owm_onecall.hourly, owm_onecall.daily, timeInfo);
+    feedWatchdog();
     drawForecast(owm_onecall.daily, timeInfo);
+    feedWatchdog();
     drawLocationDate(CITY_STRING, dateStr);
 #if DISPLAY_ALERTS
     drawAlerts(owm_onecall.alerts, CITY_STRING, dateStr);
+    feedWatchdog();
 #endif
     drawStatusBar(statusStr, refreshTimeStr, wifiRSSI, batteryVoltage);
+    feedWatchdog();
   } while (display.nextPage());
   powerOffDisplay();
 
   // DEEP SLEEP
+  watchdogCheckAndSleep(startTime, 30);
   beginDeepSleep(startTime, &timeInfo);
 }
 

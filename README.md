@@ -11,6 +11,8 @@ A beautiful weather display for the TRMNL OG e-paper device, inspired by [LMARZE
 - **Button Support**: Wake-up on button press, long-press to reset WiFi
 - **Deep Sleep**: Efficient power management with configurable refresh intervals
 - **WiFi Captive Portal**: Easy setup without hardcoding credentials
+- **OTA Auto-Update**: Automatic firmware updates from GitHub releases
+- **Watchdog Timer**: Prevents device freezes by forcing sleep after 30 seconds
 
 ## Hardware
 
@@ -136,6 +138,43 @@ The device automatically registers itself with Home Assistant via MQTT discovery
 - Verify MQTT broker is running on Home Assistant
 - Check username/password are correct
 - Check serial output for MQTT connection errors
+
+## OTA Auto-Update
+
+The device automatically checks for firmware updates from GitHub releases.
+
+### How it works:
+- Checks for updates every **12 wake cycles** (~6 hours at 30-minute intervals)
+- Downloads firmware from: `https://github.com/Dreadmond/TRMNL-Weather-Display/releases/latest`
+- Looks for a `.bin` file in the release assets named `firmware.bin`
+- Only updates if a newer version is detected
+- Automatically restarts after successful update
+
+### To create a release:
+1. Build your firmware: `pio run -t upload` (or just build without uploading)
+2. Find the `.bin` file in `.pio/build/trmnl_og/firmware.bin`
+3. Create a new GitHub release with version tag (e.g., `v1.0.1`)
+4. Upload the `firmware.bin` file as a release asset
+5. The device will automatically update on the next check cycle
+
+### Update frequency:
+- Default: Every 12 wake cycles (configurable in `src/ota_update.cpp`)
+- Only checks if battery is above low battery threshold
+- Skips update check if already checked the same version
+
+## Watchdog Timer
+
+A watchdog timer prevents device freezes by automatically sleeping the device after 30 seconds of operation.
+
+### Features:
+- **30-second timeout**: Device will force sleep if operation takes longer than 30 seconds
+- **Hardware watchdog**: Uses ESP32's task watchdog timer
+- **Automatic recovery**: If watchdog triggers, device will reset and continue normal operation
+- **Feeds throughout execution**: Watchdog is fed regularly during normal operations
+
+### Configuration:
+- Timeout is set in `src/watchdog.cpp` (default: 30 seconds)
+- Can be adjusted in `src/main.cpp` where `initWatchdog(30)` is called
 
 ## Debug Mode
 

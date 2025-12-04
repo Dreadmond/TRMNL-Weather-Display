@@ -6,3 +6,4 @@
 
 # Secrets - contains API keys, passwords, and personal info
 include/secrets.h
+firmware*.bin
